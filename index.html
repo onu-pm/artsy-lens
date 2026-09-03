@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ArtsyLens</title>
+    <meta name="description" content="AI-powered virtual tour guide that crafts immersive itineraries and guides you through locations with real-time chat." />
+    <meta property="og:title" content="ArtsyLens" />
+    <meta property="og:description" content="AI-powered virtual tour guide that crafts immersive itineraries and guides you through locations with real-time chat." />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              softPink: '#FFD1DC',
+              warmPeach: '#FFECB6',
+              mint: '#B5EAD7',
+              periwinkle: '#C7CEEA',
+              ink: '#2D2738',
+            },
+            fontFamily: {
+              sans: ['"Comic Sans MS"', '"Comic Neue"', '"Comic Sans"', 'cursive', 'sans-serif'],
+              serif: ['"Comic Sans MS"', '"Comic Neue"', '"Comic Sans"', 'cursive', 'sans-serif'],
+              display: ['"Comic Sans MS"', '"Comic Neue"', '"Comic Sans"', 'cursive', 'sans-serif'],
+              hand: ['"Comic Sans MS"', '"Comic Neue"', '"Comic Sans"', 'cursive', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      :root {
+        --color-soft-pink: #FFD1DC;
+        --color-warm-peach: #FFECB6;
+        --color-mint: #B5EAD7;
+        --color-periwinkle: #C7CEEA;
+        --ink-color: #2D2738;
+      }
+      
+      * {
+        font-family: 'Comic Sans MS', 'Comic Neue', 'Comic Sans', cursive, sans-serif !important;
+      }
+
+      body {
+        font-family: 'Comic Sans MS', 'Comic Neue', 'Comic Sans', cursive, sans-serif !important;
+        background-color: var(--color-warm-peach);
+        color: var(--ink-color);
+        margin: 0;
+        padding: 0;
+      }
+
+      /* Comic & Playful Artsy Border */
+      .border-journal {
+        border: 2.5px solid var(--ink-color);
+        border-radius: 16px;
+        box-shadow: 4px 4px 0px 0px rgba(45, 39, 56, 0.2);
+      }
+
+      .btn-vintage {
+        background-color: var(--color-warm-peach);
+        border: 2px solid var(--ink-color);
+        color: var(--ink-color);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-radius: 9999px;
+        transition: all 0.2s ease;
+        box-shadow: 2px 2px 0px 0px rgba(45, 39, 56, 0.2);
+      }
+      .btn-vintage:hover:not(:disabled) {
+        background-color: var(--color-soft-pink);
+        transform: translateY(-1px);
+        box-shadow: 4px 4px 0px 0px rgba(45, 39, 56, 0.25);
+      }
+      .btn-vintage:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      /* Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: rgba(199, 206, 234, 0.3); 
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--color-periwinkle); 
+        border-radius: 4px;
+        border: 1px solid var(--ink-color);
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--color-soft-pink); 
+      }
+      
+      .animate-compass {
+        animation: spin-slow 14s linear infinite;
+      }
+      @keyframes spin-slow {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.1/",
+    "react": "https://aistudiocdn.com/react@^19.2.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

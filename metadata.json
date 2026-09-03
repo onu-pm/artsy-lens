@@ -1,0 +1,8 @@
+{
+  "name": "ArtsyLens",
+  "description": "AI-powered virtual tour guide that crafts immersive itineraries and guides you through locations with real-time chat.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
