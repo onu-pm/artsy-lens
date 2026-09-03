@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { HomeView } from './components/HomeView';
 import { LoadingView } from './components/LoadingView';
 import { ItineraryView } from './components/ItineraryView';
@@ -193,6 +194,7 @@ const App: React.FC = () => {
 
   return (
     <div className="w-full h-screen overflow-hidden text-[#2c2420] relative">
+      <SpeedInsights />
       
       <Sidebar 
         isOpen={isSidebarOpen} 
