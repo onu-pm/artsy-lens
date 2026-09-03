@@ -8,7 +8,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Simple fallback analysis
     const text = `This looks like a detailed scene from ${context || 'the location'}. Notice materials, patterning, and composition.`;
-    res.json({ text });
+    res.json({ data: { text }, provider: 'fallback', usedFallback: true });
   } catch (err: any) {
     console.error('/api/gemini/analyze-image error', err);
     res.status(500).json({ error: err?.message || 'Internal server error' });

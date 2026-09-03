@@ -67,7 +67,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               short_label: cp.short_label || cp.title || `Stop ${idx + 1}`,
               order: typeof cp.order === 'number' ? cp.order : idx + 1,
             }));
-            res.json({ location_intro: parsed.location_intro || `An evocative journey through the highlights of ${location}.`, checkpoints: normalized });
+            res.json({ data: { location_intro: parsed.location_intro || `An evocative journey through the highlights of ${location}.`, checkpoints: normalized }, provider: 'openrouter', usedFallback: false });
             return;
           }
         } else {
@@ -91,7 +91,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ],
     };
 
-    res.json(fallback);
+    res.json({ data: fallback, provider: 'fallback', usedFallback: true });
   } catch (err: any) {
     console.error('API /api/gemini/skeleton error:', err && (err.stack || err.message || err));
     res.status(500).json({ error: err?.message || 'Internal server error' });

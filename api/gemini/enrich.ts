@@ -21,7 +21,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ],
     };
 
-    res.json(response);
+    res.json({ data: response, provider: 'fallback', usedFallback: true });
   } catch (err: any) {
     console.error('/api/gemini/enrich error', err);
     res.status(500).json({ error: err?.message || 'Internal server error' });

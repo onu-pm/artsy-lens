@@ -7,7 +7,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!image) return res.status(400).json({ error: 'Image data is required' });
 
     // Fallback: no annotation available in serverless mode
-    res.json({ imageUrl: null });
+    res.json({ data: { imageUrl: null }, provider: 'fallback', usedFallback: true });
   } catch (err: any) {
     console.error('/api/gemini/annotate-image error', err);
     res.status(500).json({ error: err?.message || 'Internal server error' });
