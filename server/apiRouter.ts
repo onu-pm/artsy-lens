@@ -22,7 +22,7 @@ export function createApiRouter(): Router {
 
   router.post("/gemini/skeleton", async (req, res) => {
     try {
-      const { location } = req.body;
+      const { location } = req.body || {};
       if (!location || typeof location !== "string") {
         return res.status(400).json({ error: "Location is required" });
       }
@@ -38,7 +38,7 @@ export function createApiRouter(): Router {
 
   router.post("/gemini/enrich", async (req, res) => {
     try {
-      const { locationName, checkpoint } = req.body;
+      const { locationName, checkpoint } = req.body || {};
       if (!checkpoint || !checkpoint.id || !checkpoint.title) {
         return res.status(400).json({ error: "Valid checkpoint is required" });
       }
@@ -54,7 +54,7 @@ export function createApiRouter(): Router {
 
   router.post("/gemini/chat", async (req, res) => {
     try {
-      const { checkpoint, messages, message } = req.body;
+      const { checkpoint, messages, message } = req.body || {};
       if (!message || typeof message !== "string") {
         return res.status(400).json({ error: "Message is required" });
       }
@@ -74,7 +74,7 @@ export function createApiRouter(): Router {
 
   router.post("/gemini/analyze-image", async (req, res) => {
     try {
-      const { image, context, promptOverride } = req.body;
+      const { image, context, promptOverride } = req.body || {};
       if (!image) {
         return res.status(400).json({ error: "Image data is required" });
       }
@@ -90,7 +90,7 @@ export function createApiRouter(): Router {
 
   router.post("/gemini/annotate-image", async (req, res) => {
     try {
-      const { image, context } = req.body;
+      const { image, context } = req.body || {};
       if (!image) {
         return res.status(400).json({ error: "Image data is required" });
       }
@@ -106,7 +106,7 @@ export function createApiRouter(): Router {
 
   router.post("/gemini/recap", async (req, res) => {
     try {
-      const { location, checkpoints } = req.body;
+      const { location, checkpoints } = req.body || {};
       if (!checkpoints || !Array.isArray(checkpoints)) {
         return res.status(400).json({ error: "Checkpoints array is required" });
       }

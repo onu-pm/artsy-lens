@@ -12,10 +12,8 @@ export function getNvidiaApiKey(): string {
 }
 
 const NVIDIA_CHAT_MODELS = [
-  "meta/llama-3.3-70b-instruct",
-  "meta/llama-3.1-70b-instruct",
-  "mistralai/mistral-large-2-instruct",
   "nvidia/llama-3.1-nemotron-70b-instruct",
+  "mistralai/mistral-large",
 ];
 
 const NVIDIA_VISION_MODELS = [
@@ -23,12 +21,36 @@ const NVIDIA_VISION_MODELS = [
   "meta/llama-3.2-90b-vision-instruct",
 ];
 
-function cleanJsonText(raw: string): string {
-  let cleaned = (raw || "").trim();
-  if (cleaned.startsWith("```")) {
-    cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "").trim();
+function extractJson<T = any>(raw: string): T {
+  const text = (raw || "").trim();
+  try {
+    return JSON.parse(text);
+  } catch {}
+
+  const matchFenced = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  if (matchFenced) {
+    try {
+      return JSON.parse(matchFenced[1].trim());
+    } catch {}
   }
-  return cleaned;
+
+  const firstBrace = text.indexOf("{");
+  const lastBrace = text.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    try {
+      return JSON.parse(text.substring(firstBrace, lastBrace + 1));
+    } catch {}
+  }
+
+  const firstBracket = text.indexOf("[");
+  const lastBracket = text.lastIndexOf("]");
+  if (firstBracket !== -1 && lastBracket > firstBracket) {
+    try {
+      return JSON.parse(text.substring(firstBracket, lastBracket + 1));
+    } catch {}
+  }
+
+  throw new Error("Could not parse JSON from model output: " + text.slice(0, 150));
 }
 
 export async function callNvidia(
@@ -52,44 +74,52 @@ export async function callNvidia(
   let lastError: any = null;
 
   for (const model of candidateModels) {
-    try {
-      const payload: any = {
-        model,
-        messages,
-        max_tokens: maxTokens,
-        temperature,
-        top_p: 1,
-      };
+    for (const tryJsonFormat of options.jsonMode ? [true, false] : [false]) {
+      try {
+        const payload: any = {
+          model,
+          messages,
+          max_tokens: maxTokens,
+          temperature,
+          top_p: 1,
+        };
 
-      if (options.jsonMode) {
-        payload.response_format = { type: "json_object" };
+        if (tryJsonFormat) {
+          payload.response_format = { type: "json_object" };
+        }
+
+        const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(4000),
+        });
+
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.warn(`[NVIDIA] ${model} (jsonFormat=${tryJsonFormat}) HTTP ${res.status}: ${errorText}`);
+          lastError = new Error(`NVIDIA (${model}) status ${res.status}: ${errorText}`);
+          // If status is 400 or 422 with json_object, try next without json_object; otherwise skip model
+          if (tryJsonFormat && (res.status === 400 || res.status === 422)) {
+            continue;
+          }
+          break;
+        }
+
+        const data = await res.json();
+        const content = data.choices?.[0]?.message?.content;
+        if (content && typeof content === "string") {
+          return content;
+        }
+      } catch (err: any) {
+        console.warn(`[NVIDIA] ${model} failed:`, err?.message || err);
+        lastError = err;
+        break; // don't repeat on timeout or network error
       }
-
-      const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.warn(`[NVIDIA] ${model} returned HTTP ${res.status}: ${errorText}`);
-        lastError = new Error(`NVIDIA (${model}) status ${res.status}: ${errorText}`);
-        continue;
-      }
-
-      const data = await res.json();
-      const content = data.choices?.[0]?.message?.content;
-      if (content && typeof content === "string") {
-        return content;
-      }
-    } catch (err: any) {
-      console.warn(`[NVIDIA] ${model} failed:`, err?.message || err);
-      lastError = err;
     }
   }
 
@@ -98,36 +128,25 @@ export async function callNvidia(
 
 export async function nvidiaGenerateSkeleton(location: string) {
   const systemPrompt = `You are an expert cultural geographer, architectural historian, and master local guide.
-Plan a captivating, walkable walking tour for "${location}".
-Select 4 to 6 culturally, historically, or architecturally significant checkpoints.
-Order them in a logical, walkable spatial progression.
-
-Output strictly valid JSON with this exact schema:
+Plan an engaging walking tour for "${location}".
+Select 4 to 6 culturally or historically significant checkpoints in a walkable spatial order.
+Output strictly JSON matching:
 {
-  "location": "${location}",
-  "intro": "1-2 sentences capturing the character and atmosphere of the destination.",
-  "totalDuration": "e.g. 2.5 hours",
+  "location_intro": "1-2 evocative sentences capturing the spirit of the destination.",
   "checkpoints": [
     {
       "id": 1,
-      "title": "Exact Name of Checkpoint",
-      "lat": 0.0,
-      "lng": 0.0,
-      "approxTime": "e.g. 25 mins",
-      "summary": "1 punchy sentence highlighting why this place matters.",
-      "things_to_notice": [
-        "First specific architectural or cultural feature to observe",
-        "Second subtle detail that most casual visitors miss"
-      ],
-      "questions": [
-        "A thought-provoking question to ask a guide here",
-        "A second intriguing query about its history or craftsmanship"
-      ]
+      "title": "Exact Landmark Name",
+      "short_label": "Short Label (1-3 words)",
+      "order": 1,
+      "summary": "1 sentence why this place matters.",
+      "things_to_notice": ["Detail 1", "Detail 2"],
+      "questions": ["Question 1", "Question 2"]
     }
   ]
 }`;
 
-  const userPrompt = `Create a walking itinerary for "${location}". Return only JSON.`;
+  const userPrompt = `Generate a JSON walking itinerary for "${location}". Return valid JSON only.`;
 
   const raw = await callNvidia(
     [
@@ -137,35 +156,29 @@ Output strictly valid JSON with this exact schema:
     { jsonMode: true, maxTokens: 2500, temperature: 0.3 }
   );
 
-  const parsed = JSON.parse(cleanJsonText(raw));
-  if (!parsed.checkpoints || !Array.isArray(parsed.checkpoints) || parsed.checkpoints.length === 0) {
+  const parsed = extractJson<any>(raw);
+  const checkpoints = Array.isArray(parsed?.checkpoints) ? parsed.checkpoints : Array.isArray(parsed) ? parsed : [];
+  if (checkpoints.length === 0) {
     throw new Error("Invalid itinerary structure from NVIDIA");
   }
 
+  const normalized = checkpoints.map((cp: any, index: number) => ({
+    id: typeof cp.id === "number" ? cp.id : index + 1,
+    title: cp.title || `Stop ${index + 1}`,
+    short_label: cp.short_label || cp.title || `Stop ${index + 1}`,
+    order: typeof cp.order === "number" ? cp.order : index + 1,
+    summary: cp.summary || "A significant cultural landmark along the trail.",
+    things_to_notice: Array.isArray(cp.things_to_notice) && cp.things_to_notice.length > 0
+      ? cp.things_to_notice
+      : ["Notice the craftsmanship and proportion", "Observe the ambient local atmosphere"],
+    questions: Array.isArray(cp.questions) && cp.questions.length > 0
+      ? cp.questions
+      : ["What history defined this place?", "What details are easy to miss?"],
+  }));
+
   return {
-    location: parsed.location || location,
-    intro: parsed.intro || `A curated cultural journey through ${location}.`,
-    totalDuration: parsed.totalDuration || "2 - 3 hours",
-    checkpoints: parsed.checkpoints.map((cp: any, index: number) => ({
-      id: cp.id || index + 1,
-      title: cp.title || `Stop ${index + 1}`,
-      lat: typeof cp.lat === "number" ? cp.lat : 0,
-      lng: typeof cp.lng === "number" ? cp.lng : 0,
-      approxTime: cp.approxTime || "25 mins",
-      summary: cp.summary || "A significant cultural landmark along the trail.",
-      things_to_notice: Array.isArray(cp.things_to_notice) && cp.things_to_notice.length > 0
-        ? cp.things_to_notice
-        : [
-            "Observe the balance and rhythm of the facade.",
-            "Notice the interplay between heritage materials and surrounding street life."
-          ],
-      questions: Array.isArray(cp.questions) && cp.questions.length > 0
-        ? cp.questions
-        : [
-            "What historical era defined the construction of this site?",
-            "What hidden design details reveal the original purpose of this space?"
-          ]
-    })),
+    location_intro: parsed.location_intro || parsed.intro || `A curated cultural journey through ${location}.`,
+    checkpoints: normalized,
   };
 }
 
@@ -198,7 +211,7 @@ Return strictly JSON with this schema:
     { jsonMode: true, maxTokens: 1200, temperature: 0.3 }
   );
 
-  const parsed = JSON.parse(cleanJsonText(raw));
+  const parsed = extractJson<any>(raw);
   return {
     id: checkpoint.id,
     summary: parsed.summary || checkpoint.summary,
@@ -289,6 +302,7 @@ One subtle overlooked detail that rewards close observation.`;
           max_tokens: 800,
           temperature: 0.4,
         }),
+        signal: AbortSignal.timeout(8000),
       });
 
       if (res.ok) {
@@ -329,7 +343,7 @@ Return strictly JSON:
     { jsonMode: true, maxTokens: 1200, temperature: 0.6 }
   );
 
-  const parsed = JSON.parse(cleanJsonText(raw));
+  const parsed = extractJson<any>(raw);
   const entryMap: Record<number, string> = {};
   if (Array.isArray(parsed.entries)) {
     parsed.entries.forEach((e: any) => {
