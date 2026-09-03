@@ -29,6 +29,17 @@ async function startServer() {
     });
   });
 
+  app.get('/api/ai/validate-openrouter', async (req, res) => {
+    try {
+      const hasKey = Boolean(getOpenRouterApiKey());
+      if (!hasKey) return res.json({ ok: false, hasKey: false, friendly: 'No OpenRouter API key configured' });
+      const result = await validateOpenRouterKey();
+      res.json({ ok: Boolean(result?.ok), hasKey: true, friendly: result?.friendly });
+    } catch (err: any) {
+      res.status(500).json({ ok: false, friendly: err?.message || 'Validation failed' });
+    }
+  });
+
   app.post("/api/gemini/skeleton", async (req, res) => {
     try {
       const { location } = req.body;
