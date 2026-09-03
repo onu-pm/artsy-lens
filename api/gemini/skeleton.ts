@@ -1,5 +1,4 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { generateSkeleton } from '../../server/openrouterService';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -14,10 +13,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
+    // Log presence of keys (do not log secrets themselves)
+    console.log('OPENROUTER_API_KEY present:', Boolean(process.env.OPENROUTER_API_KEY));
+    console.log('GEMINI_API_KEY present:', Boolean(process.env.GEMINI_API_KEY || process.env.API_KEY));
+
+    // Dynamic import so import-time errors surface in the try/catch
+    const mod = await import('../../server/openrouterService');
+    const generateSkeleton = mod.generateSkeleton;
+
     const data = await generateSkeleton(location);
     res.json(data);
   } catch (err: any) {
-    console.error('API /api/gemini/skeleton error:', err);
+    console.error('API /api/gemini/skeleton error:', err && (err.stack || err.message || err));
     res.status(500).json({ error: err?.message || 'Internal server error' });
   }
 }
