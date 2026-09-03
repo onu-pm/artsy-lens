@@ -40,6 +40,17 @@ async function startServer() {
     }
   });
 
+  app.get('/api/ai/validate-nvidia', async (req, res) => {
+    try {
+      const hasKey = Boolean(getNvidiaApiKey() && getNvidiaApiUrl());
+      if (!hasKey) return res.json({ ok: false, hasKey: false, friendly: 'No NVIDIA API key or URL configured' });
+      const result = await validateNvidiaKey();
+      res.json({ ok: Boolean(result?.ok), hasKey: true, friendly: result?.friendly });
+    } catch (err: any) {
+      res.status(500).json({ ok: false, friendly: err?.message || 'Validation failed' });
+    }
+  });
+
   app.post("/api/gemini/skeleton", async (req, res) => {
     try {
       const { location } = req.body;
