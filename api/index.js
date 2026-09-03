@@ -340,6 +340,7 @@ function cleanJsonText(raw) {
   return cleaned;
 }
 async function generateSkeleton(location) {
+  const ai = getAiClient();
   const prompt = `You are an expert cultural tour guide and historian planning an efficient walking tour. Create a logical, engaging itinerary for "${location}" where checkpoints are visited in a walkable sequence to minimize travel time.
 Output strictly JSON matching this structure:
 {
@@ -355,7 +356,6 @@ Output strictly JSON matching this structure:
 }
 Include between 5 and 7 must-see spots ordered strictly by their geographic walking path.`;
   try {
-    const ai = getAiClient();
     const parsed = await callWithModelFallback(async (model) => {
       const response = await ai.models.generateContent({
         model,
@@ -424,6 +424,7 @@ Include between 5 and 7 must-see spots ordered strictly by their geographic walk
   }
 }
 async function enrichCheckpointData(locationName, checkpoint) {
+  const ai = getAiClient();
   const prompt = `You are an expert cultural guide and historian enriching the checkpoint "${checkpoint.title}" at "${locationName}".
 Tasks:
 1. summary: Write 2 vivid, engaging sentences (approx 30-40 words) about this specific spot.
@@ -431,7 +432,6 @@ Tasks:
 3. questions: 3 short, intriguing questions for the visitor to ask.
 Output strictly JSON.`;
   try {
-    const ai = getAiClient();
     return await callWithModelFallback(async (model) => {
       const response = await ai.models.generateContent({
         model,
@@ -640,9 +640,9 @@ ${context || "Historical site"}`;
   return { imageUrl: null };
 }
 async function recapTour(location, checkpoints) {
+  const ai = getAiClient();
   const simplifiedCheckpoints = checkpoints.map((c) => ({ id: c.id, title: c.title, desc: c.summary }));
   try {
-    const ai = getAiClient();
     return await callWithModelFallback(async (model) => {
       const response = await ai.models.generateContent({
         model,
@@ -1017,21 +1017,7 @@ async function dispatchSkeleton(location) {
       console.warn("[Dispatcher] OpenRouter skeleton failed, falling back to Gemini:", err);
     }
   }
-  try {
-    return await generateSkeleton(location);
-  } catch (err) {
-    console.warn("[Dispatcher] Gemini skeleton failed, using fallback:", err);
-  }
-  return {
-    location_intro: `Explore the celebrated landmarks and cultural heritage of ${location}.`,
-    checkpoints: [
-      { id: 1, title: `${location} Historic Quarter`, short_label: "Historic Quarter", order: 1 },
-      { id: 2, title: `Main Cultural Plaza & Grand Architecture`, short_label: "Cultural Plaza", order: 2 },
-      { id: 3, title: `Iconic Monument & Heritage Sanctuary`, short_label: "Heritage Monument", order: 3 },
-      { id: 4, title: `Artisan Promenade & Craft District`, short_label: "Artisan District", order: 4 },
-      { id: 5, title: `Panoramic City Overlook & Promenade`, short_label: "Scenic Overlook", order: 5 }
-    ]
-  };
+  return await generateSkeleton(location);
 }
 async function dispatchEnrich(locationName, checkpoint) {
   if (getNvidiaApiKey()) {
@@ -1048,25 +1034,7 @@ async function dispatchEnrich(locationName, checkpoint) {
       console.warn("[Dispatcher] OpenRouter enrich failed, falling back to Gemini:", err);
     }
   }
-  try {
-    return await enrichCheckpointData(locationName, checkpoint);
-  } catch (err) {
-    console.warn("[Dispatcher] Gemini enrich failed, using fallback:", err);
-  }
-  return {
-    id: checkpoint.id,
-    summary: `${checkpoint.title} is an essential landmark in ${locationName}, reflecting centuries of architecture, community, and living culture.`,
-    things_to_notice: [
-      "Historic stonework and traditional structural masonry",
-      "Subtle ornamentation and architectural proportions",
-      "The rhythm and atmosphere of the surrounding streetscape"
-    ],
-    questions: [
-      "What historical period shaped the design of this site?",
-      "How does this space reflect the traditions of local residents?",
-      "What architectural details are most easily overlooked by visitors?"
-    ]
-  };
+  return await enrichCheckpointData(locationName, checkpoint);
 }
 async function dispatchChat(checkpoint, messages, message) {
   if (getNvidiaApiKey()) {
@@ -1083,14 +1051,7 @@ async function dispatchChat(checkpoint, messages, message) {
       console.warn("[Dispatcher] OpenRouter chat failed, falling back to Gemini:", err);
     }
   }
-  try {
-    return await chatWithGuide(checkpoint, messages, message);
-  } catch (err) {
-    console.warn("[Dispatcher] Gemini chat failed, using fallback:", err);
-  }
-  return {
-    text: `Standing here at ${checkpoint?.title || "this landmark"}, notice the craftsmanship and proportions of the structure. The interplay of materials and ambient light gives this place its singular character. What aspect of its history or architecture are you most curious about?`
-  };
+  return await chatWithGuide(checkpoint, messages, message);
 }
 async function dispatchAnalyzeImage(image, context, promptOverride) {
   if (getNvidiaApiKey()) {
@@ -1107,20 +1068,7 @@ async function dispatchAnalyzeImage(image, context, promptOverride) {
       console.warn("[Dispatcher] OpenRouter vision failed, falling back to Gemini:", err);
     }
   }
-  try {
-    return await analyzeImage(image, context, promptOverride);
-  } catch (err) {
-    console.warn("[Dispatcher] Gemini vision failed, using fallback:", err);
-  }
-  return `### What You're Seeing
-This perspective captures distinctive heritage masonry and architectural detailing characteristic of significant cultural landmarks.
-
-### Key Features to Notice
-- **Materials & Craftsmanship:** Observe the masonry textures, joint lines, and structural weathering that reveal the era of construction.
-- **Proportion & Style:** Notice the interplay between functional proportions and decorative accents typical of regional traditions.
-
-### A Detail Most Visitors Miss
-Pay attention to the transition between the foundational plinth and the upper decorative register\u2014it tells the story of how master builders adapted styles to local materials.`;
+  return await analyzeImage(image, context, promptOverride);
 }
 async function dispatchAnnotateImage(image, context) {
   if (getOpenRouterApiKey()) {
@@ -1130,12 +1078,7 @@ async function dispatchAnnotateImage(image, context) {
       console.warn("[Dispatcher] OpenRouter annotate failed:", err);
     }
   }
-  try {
-    return await annotateImageStudy(image, context);
-  } catch (err) {
-    console.warn("[Dispatcher] Gemini annotate failed:", err);
-    return { imageUrl: null };
-  }
+  return await annotateImageStudy(image, context);
 }
 async function dispatchRecap(location, checkpoints) {
   if (getNvidiaApiKey()) {
@@ -1152,20 +1095,7 @@ async function dispatchRecap(location, checkpoints) {
       console.warn("[Dispatcher] OpenRouter recap failed, falling back to Gemini:", err);
     }
   }
-  try {
-    return await recapTour(location, checkpoints);
-  } catch (err) {
-    console.warn("[Dispatcher] Gemini recap failed, using fallback:", err);
-  }
-  const entries = {};
-  checkpoints.forEach((c) => {
-    entries[c.id] = `I paused at ${c.title}, observing the rich texture of history and craftsmanship.`;
-  });
-  return {
-    summary: `A memorable cultural voyage through the storied landmarks of ${location}.`,
-    journalStory: `History and craftsmanship revealed their quietest wonders step by step.`,
-    entries
-  };
+  return await recapTour(location, checkpoints);
 }
 
 // server/apiRouter.ts
