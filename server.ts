@@ -36,7 +36,13 @@ async function startServer() {
         return res.status(400).json({ error: "Location is required" });
       }
       const data = await generateSkeleton(location);
-      res.json(data);
+      const provider = (data && (data as any).__provider) || (getOpenRouterApiKey() ? 'openrouter' : 'unknown');
+      const usedFallback = Boolean(data && (data as any).__usedFallback);
+      const providerError = (data && (data as any).__providerError) || undefined;
+      if (data && (data as any).__provider) { delete (data as any).__provider; }
+      if (data && (data as any).__usedFallback) { delete (data as any).__usedFallback; }
+      if (data && (data as any).__providerError) { delete (data as any).__providerError; }
+      res.json({ data, provider, usedFallback, providerError });
     } catch (error: any) {
       console.error("Skeleton generation error:", error);
       res.status(500).json({
@@ -52,7 +58,13 @@ async function startServer() {
         return res.status(400).json({ error: "Valid checkpoint is required" });
       }
       const data = await enrichCheckpointData(locationName || "the location", checkpoint);
-      res.json(data);
+      const provider = (data && (data as any).__provider) || (getOpenRouterApiKey() ? 'openrouter' : 'unknown');
+      const usedFallback = Boolean(data && (data as any).__usedFallback);
+      const providerError = (data && (data as any).__providerError) || undefined;
+      if (data && (data as any).__provider) { delete (data as any).__provider; }
+      if (data && (data as any).__usedFallback) { delete (data as any).__usedFallback; }
+      if (data && (data as any).__providerError) { delete (data as any).__providerError; }
+      res.json({ data, provider, usedFallback, providerError });
     } catch (error: any) {
       console.error("Checkpoint enrichment error:", error);
       res.status(500).json({
@@ -72,7 +84,13 @@ async function startServer() {
         messages || [],
         message
       );
-      res.json(reply);
+      const provider = (reply && (reply as any).__provider) || (getOpenRouterApiKey() ? 'openrouter' : 'unknown');
+      const usedFallback = Boolean(reply && (reply as any).__usedFallback);
+      const providerError = (reply && (reply as any).__providerError) || undefined;
+      if (reply && (reply as any).__provider) { delete (reply as any).__provider; }
+      if (reply && (reply as any).__usedFallback) { delete (reply as any).__usedFallback; }
+      if (reply && (reply as any).__providerError) { delete (reply as any).__providerError; }
+      res.json({ data: reply, provider, usedFallback, providerError });
     } catch (error: any) {
       console.error("Chat error:", error);
       res.status(500).json({
@@ -88,7 +106,13 @@ async function startServer() {
         return res.status(400).json({ error: "Image data is required" });
       }
       const result = await analyzeImage(image, context || "monument", promptOverride);
-      res.json(result);
+      const provider = (result && (result as any).__provider) || (getOpenRouterApiKey() ? 'openrouter' : 'unknown');
+      const usedFallback = Boolean(result && (result as any).__usedFallback);
+      const providerError = (result && (result as any).__providerError) || undefined;
+      if (result && (result as any).__provider) { delete (result as any).__provider; }
+      if (result && (result as any).__usedFallback) { delete (result as any).__usedFallback; }
+      if (result && (result as any).__providerError) { delete (result as any).__providerError; }
+      res.json({ data: result, provider, usedFallback, providerError });
     } catch (error: any) {
       console.error("Image analysis error:", error);
       res.status(500).json({
@@ -104,7 +128,13 @@ async function startServer() {
         return res.status(400).json({ error: "Image data is required" });
       }
       const result = await annotateImageStudy(image, context);
-      res.json(result);
+      const provider = (result && (result as any).__provider) || (getOpenRouterApiKey() ? 'openrouter' : 'unknown');
+      const usedFallback = Boolean(result && (result as any).__usedFallback);
+      const providerError = (result && (result as any).__providerError) || undefined;
+      if (result && (result as any).__provider) { delete (result as any).__provider; }
+      if (result && (result as any).__usedFallback) { delete (result as any).__usedFallback; }
+      if (result && (result as any).__providerError) { delete (result as any).__providerError; }
+      res.json({ data: result, provider, usedFallback, providerError });
     } catch (error: any) {
       console.error("Annotate image error:", error);
       res.status(500).json({
@@ -120,7 +150,13 @@ async function startServer() {
         return res.status(400).json({ error: "Checkpoints array is required" });
       }
       const data = await recapTour(location || "Journey", checkpoints);
-      res.json(data);
+      const provider = (data && (data as any).__provider) || (getOpenRouterApiKey() ? 'openrouter' : 'unknown');
+      const usedFallback = Boolean(data && (data as any).__usedFallback);
+      const providerError = (data && (data as any).__providerError) || undefined;
+      if (data && (data as any).__provider) { delete (data as any).__provider; }
+      if (data && (data as any).__usedFallback) { delete (data as any).__usedFallback; }
+      if (data && (data as any).__providerError) { delete (data as any).__providerError; }
+      res.json({ data, provider, usedFallback, providerError });
     } catch (error: any) {
       console.error("Recap error:", error);
       res.status(500).json({
