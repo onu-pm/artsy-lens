@@ -10,10 +10,8 @@ import {
   recapTour as geminiRecap,
 } from "./geminiService";
 
-const DEFAULT_OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
-
 export function getOpenRouterApiKey(): string {
-  return process.env.OPENROUTER_API_KEY || DEFAULT_OPENROUTER_KEY;
+  return (process.env.OPENROUTER_API_KEY || "").trim();
 }
 
 const OPENROUTER_MODELS = [
@@ -41,6 +39,9 @@ async function callOpenRouter(
   } = {}
 ): Promise<string> {
   const apiKey = getOpenRouterApiKey();
+  if (!apiKey) {
+    throw new Error("OPENROUTER_API_KEY is not configured.");
+  }
   const maxTokens = options.maxTokens || 1500;
   const temperature = options.temperature ?? 0.3;
 

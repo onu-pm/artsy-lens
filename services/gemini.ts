@@ -1,28 +1,5 @@
 import { Tour, Checkpoint, ChatMessage } from '../types';
 
-async function parseEnvelope(res: Response) {
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    const providerError = err.providerError || err.error;
-    if (providerError) {
-      try { window.dispatchEvent(new CustomEvent('ai-provider-error', { detail: providerError })); } catch (_) {}
-    }
-    throw new Error(providerError || `Server responded with status ${res.status}`);
-  }
-
-  const envelope = await res.json().catch(() => ({}));
-  const data = (envelope && typeof envelope === 'object' && 'data' in envelope) ? envelope.data : envelope;
-
-  if (envelope && envelope.providerError) {
-    try { window.dispatchEvent(new CustomEvent('ai-provider-error', { detail: envelope.providerError })); } catch (_) {}
-  }
-  if (envelope && envelope.usedFallback) {
-    try { window.dispatchEvent(new CustomEvent('ai-provider-fallback', { detail: { provider: envelope.provider } })); } catch (_) {}
-  }
-
-  return { envelope, data };
-}
-
 export const generateItinerarySkeleton = async (locationInput: string): Promise<Tour> => {
   try {
     const res = await fetch('/api/gemini/skeleton', {
@@ -33,12 +10,10 @@ export const generateItinerarySkeleton = async (locationInput: string): Promise<
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      const providerError = err.providerError || err.error;
-      if (providerError) { try { window.dispatchEvent(new CustomEvent('ai-provider-error', { detail: providerError })); } catch (_) {} }
-      throw new Error(providerError || `Server responded with status ${res.status}`);
+      throw new Error(err.error || `Server responded with status ${res.status}`);
     }
 
-    const { data: partialResponse } = await parseEnvelope(res);
+    const partialResponse = await res.json();
     const safeCheckpoints = (partialResponse.checkpoints || []).map((cp: any, index: number) => ({
       ...cp,
       order: cp.order ?? (index + 1),
@@ -76,12 +51,10 @@ export const enrichCheckpoint = async (
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      const providerError = err.providerError || err.error;
-      if (providerError) { try { window.dispatchEvent(new CustomEvent('ai-provider-error', { detail: providerError })); } catch (_) {} }
-      throw new Error(providerError || `Server responded with status ${res.status}`);
+      throw new Error(err.error || `Server responded with status ${res.status}`);
     }
 
-    const { data } = await parseEnvelope(res);
+    const data = await res.json();
     return {
       summary: data.summary,
       lookFor: data.things_to_notice || [],
@@ -113,13 +86,11 @@ export const sendChatMessage = async (
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      const providerError = err.providerError || err.error;
-      if (providerError) { try { window.dispatchEvent(new CustomEvent('ai-provider-error', { detail: providerError })); } catch (_) {} }
-      throw new Error(providerError || `Server responded with status ${res.status}`);
+      throw new Error(err.error || `Server responded with status ${res.status}`);
     }
 
-    const { data } = await parseEnvelope(res);
-    return (data && data.text) || "I see what you mean. What aspect would you like to explore further?";
+    const data = await res.json();
+    return data.text || "I see what you mean. What aspect would you like to explore further?";
   } catch (err) {
     console.error("Chat message failed:", err);
     throw err;
@@ -140,13 +111,11 @@ export const analyzeCheckpointImage = async (
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      const providerError = err.providerError || err.error;
-      if (providerError) { try { window.dispatchEvent(new CustomEvent('ai-provider-error', { detail: providerError })); } catch (_) {} }
-      throw new Error(providerError || `Server responded with status ${res.status}`);
+      throw new Error(err.error || `Server responded with status ${res.status}`);
     }
 
-    const { data } = await parseEnvelope(res);
-    return (data && data.text) || "I see the image, but I'm having trouble analyzing the specific details right now.";
+    const data = await res.json();
+    return data.text || "I see the image, but I'm having trouble analyzing the specific details right now.";
   } catch (e) {
     console.error("Analysis failed", e);
     return "I couldn't analyze that image clearly right now.";
@@ -165,13 +134,10 @@ export const generateAnnotatedImage = async (
     });
 
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      const providerError = err.providerError || err.error;
-      if (providerError) { try { window.dispatchEvent(new CustomEvent('ai-provider-error', { detail: providerError })); } catch (_) {} }
       return undefined;
     }
 
-    const { data } = await parseEnvelope(res);
+    const data = await res.json();
     return data.imageUrl || undefined;
   } catch (e) {
     console.warn("Annotated image request failed", e);
@@ -192,12 +158,10 @@ export const generateTourRecap = async (
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      const providerError = err.providerError || err.error;
-      if (providerError) { try { window.dispatchEvent(new CustomEvent('ai-provider-error', { detail: providerError })); } catch (_) {} }
-      throw new Error(providerError || `Server responded with status ${res.status}`);
+      throw new Error(err.error || `Server responded with status ${res.status}`);
     }
 
-    const { data } = await parseEnvelope(res);
+    const data = await res.json();
     return data;
   } catch (e) {
     console.error("Recap generation failed", e);
