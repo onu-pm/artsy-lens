@@ -44,6 +44,11 @@ async function startServer() {
     try {
       const hasKey = Boolean(getNvidiaApiKey() && getNvidiaApiUrl());
       if (!hasKey) return res.json({ ok: false, hasKey: false, friendly: 'No NVIDIA API key or URL configured' });
+      const debug = String(req.query?.debug || '') === 'true';
+      if (debug) {
+        const probe = await debugNvidiaProbe('Debug probe: return a short confirmation and a small example output');
+        return res.json({ ok: Boolean(probe?.ok), hasKey: true, probe });
+      }
       const result = await validateNvidiaKey();
       res.json({ ok: Boolean(result?.ok), hasKey: true, friendly: result?.friendly });
     } catch (err: any) {
